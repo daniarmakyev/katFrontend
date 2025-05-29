@@ -20,7 +20,6 @@ const Layout = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Add admin shortcut logic
     if (loginData.login === "admin" && loginData.password === "admin") {
       localStorage.setItem("userId", "admin");
       setIsLoginModalOpen(false);
@@ -29,7 +28,6 @@ const Layout = () => {
       return;
     }
 
-    // Existing login logic
     try {
       setLoginError(null);
       await dispatch(loginUser(loginData)).unwrap();
@@ -83,7 +81,7 @@ const Layout = () => {
           </svg>
         </button>
       )}
-      {/* Update login button */}
+
       {!userId && (
         <button
           type="button"

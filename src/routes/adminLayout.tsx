@@ -9,7 +9,7 @@ import { loginUser, logout } from "../store/action/user.actions";
 const AdminLayout = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { user, isAuth } = useAppSelector((state) => state.user); // Add error
+  const { user, isAuth } = useAppSelector((state) => state.user); 
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginData, setLoginData] = useState({
@@ -20,7 +20,6 @@ const AdminLayout = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Add admin shortcut logic
     if (loginData.login === "admin" && loginData.password === "admin") {
       localStorage.setItem("userId", "admin");
       setIsLoginModalOpen(false);
@@ -29,7 +28,6 @@ const AdminLayout = () => {
       return;
     }
 
-    // Existing login logic
     try {
       setLoginError(null);
       await dispatch(loginUser(loginData)).unwrap();
@@ -133,7 +131,7 @@ const AdminLayout = () => {
               <button
                 onClick={() => {
                   setIsLoginModalOpen(false);
-                  setLoginError(null); // Clear error when closing modal
+                  setLoginError(null); 
                 }}
                 className="text-white-black hover:text-purple transition-colors"
               >
@@ -183,7 +181,6 @@ const AdminLayout = () => {
         </div>
       )}
 
-      {/* Change userId to userId */}
       {userId && (
         <div className="fixed bottom-20 right-2 sm:right-8 cursor-pointer z-30 flex items-center justify-center gap-2   bg-purple hover:bg-dark-purple hover:shadow-[0_0_4px_0_rgb(108,99,255)] rounded-md p-2 h-10">
           <button onClick={handleLogout} className="">
