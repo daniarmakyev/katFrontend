@@ -57,7 +57,7 @@ const Admin = () => {
   ];
 
   const handleCardClick = (route: string) => {
-    window.location.href = `http://localhost:5173${route}`;
+    window.location.href = `https://kat-frontend.vercel.app${route}`;
   };
 
   return (
