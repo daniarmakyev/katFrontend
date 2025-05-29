@@ -45,13 +45,8 @@ const AuthPage = () => {
 
   const handleAddressSelect = (address: string) => {
     setIsAddressLoading(true);
-    showNotification("loading", "Получение адреса...");
-
-    setTimeout(() => {
-      setFormData((prev) => ({ ...prev, address }));
-      setIsAddressLoading(false);
-      showNotification("success", "Адрес успешно получен");
-    }, 1000);
+    setFormData((prev) => ({ ...prev, address }));
+    setIsAddressLoading(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -206,11 +201,11 @@ const AuthPage = () => {
                   <MapAddressSelector onAddressSelect={handleAddressSelect} />
 
                   {isAddressLoading ? (
-                    <div className="text-purple text-sm">
+                    <div className="text-purple text-sm ms-4">
                       Получение адреса...
                     </div>
                   ) : (
-                    <div className="text-purple text-sm opacity-0 pointer-events-none">
+                    <div className="ms-2 text-purple text-sm opacity-0 pointer-events-none">
                       Получение адреса...
                     </div>
                   )}

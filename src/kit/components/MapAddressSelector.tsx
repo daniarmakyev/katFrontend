@@ -1,25 +1,7 @@
-import { useState, useEffect, useMemo } from "react";
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  useMapEvents,
-  useMap,
-} from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import L from "leaflet";
-
+import { useState, useEffect, useRef, useCallback } from "react";
+import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
 import defaultMarker from "../assets/deafoult-marker.svg";
 import userMarker from "../assets/user-marker.svg";
-import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
-import markerIcon from "leaflet/dist/images/marker-icon.png";
-import markerShadow from "leaflet/dist/images/marker-shadow.png";
-
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: markerIcon2x,
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
-});
 
 interface MapAddressSelectorProps {
   onAddressSelect: (address: string) => void;
@@ -28,156 +10,237 @@ interface MapAddressSelectorProps {
 const MapAddressSelector: React.FC<MapAddressSelectorProps> = ({
   onAddressSelect,
 }) => {
-  const [position, setPosition] = useState<[number, number]>([
-    42.8746, 74.5698,
-  ]);
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(
-    null
-  );
+  const [position, setPosition] = useState({
+    lat: 42.8746,
+    lng: 74.5698,
+  });
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [initialSetupDone, setInitialSetupDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoadingAddress, setIsLoadingAddress] = useState(false);
+  const [markers, setMarkers] = useState<
+    {
+      default: {
+        url: string;
+        scaledSize: google.maps.Size;
+        anchor: google.maps.Point;
+      };
+      user: {
+        url: string;
+        scaledSize: google.maps.Size;
+        anchor: google.maps.Point;
+      };
+    } | null
+  >(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
 
-  const markers = useMemo(
-    () => ({
-      default: L.icon({
-        iconUrl: userMarker,
-        iconSize: [40, 40],
-        iconAnchor: [20, 40],
-        popupAnchor: [0, -40],
-      }),
-      user: L.icon({
-        iconUrl: defaultMarker,
-        iconSize: [45, 45],
-        iconAnchor: [22, 45],
-        popupAnchor: [0, -45],
-      }),
-      selected: L.icon({
-        iconUrl: userMarker,
-        iconSize: [50, 50],
-        iconAnchor: [25, 50],
-        popupAnchor: [0, -50],
-      }),
-    }),
-    []
-  );
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastRequestTime = useRef<number>(0);
+  const addressCache = useRef<Map<string, string>>(new Map());
 
-  const getAddress = async (lat: number, lon: number) => {
+  const MIN_REQUEST_INTERVAL = 1100;
+  const DEBOUNCE_DELAY = 200;
+
+  const onLoad = useCallback((map: google.maps.Map) => {
+    mapRef.current = map;
+        setMarkers({
+      default: {
+        url: userMarker,
+        scaledSize: new window.google.maps.Size(40, 40),
+        anchor: new window.google.maps.Point(20, 40),
+      },
+      user: {
+        url: defaultMarker,
+        scaledSize: new window.google.maps.Size(45, 45),
+        anchor: new window.google.maps.Point(22, 45),
+      },
+    });
+  }, []);
+
+  const getCacheKey = (lat: number, lng: number) => {
+    const roundedLat = Math.round(lat * 1000) / 1000;
+    const roundedLng = Math.round(lng * 1000) / 1000;
+    return `${roundedLat},${roundedLng}`;
+  };
+
+  const getAddress = useCallback(async (lat: number, lng: number) => {
+    const cacheKey = getCacheKey(lat, lng);
+    
+    if (addressCache.current.has(cacheKey)) {
+      return addressCache.current.get(cacheKey)!;
+    }
+
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTime.current;
+    
+    if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+      const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+
+    lastRequestTime.current = Date.now();
+
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ru`,
-        {
-          headers: {
-            "User-Agent": "YourApp/1.0",
-            "Accept-Language": "ru",
-          },
-        }
-      );
+      const geocoder = new google.maps.Geocoder();
+      const result = await new Promise<string>((resolve, reject) => {
+        geocoder.geocode(
+          { location: { lat, lng } },
+          (results, status) => {
+            if (status === "OK" && results?.[0]) {
+              resolve(results[0].formatted_address);
+            } else {
+              reject(new Error("Не удалось получить адрес"));
+            }
+          }
+        );
+      });
 
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
+      addressCache.current.set(cacheKey, result);
+      
+      if (addressCache.current.size > 50) {
+        const firstKey = addressCache.current.keys().next().value;
+        if (typeof firstKey === 'string') {
+          addressCache.current.delete(firstKey);
+        }
       }
 
-      const data = await response.json();
-      return data.display_name;
+      return result;
     } catch (error) {
       console.error("Error fetching address:", error);
       throw error;
     }
-  };
+  }, []);
 
-  const RecenterAutomatically = () => {
-    const map = useMap();
-
-    useEffect(() => {
-      if (userLocation && !initialSetupDone) {
-        map.setView(userLocation, 17);
-        setInitialSetupDone(true);
+  const debouncedGetAddress = useCallback(
+    (lat: number, lng: number) => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
       }
-    }, [map]);
 
-    return null;
-  };
+      setIsLoadingAddress(true);
+      setError(null);
+
+      debounceTimer.current = setTimeout(async () => {
+        try {
+          const address = await getAddress(lat, lng);
+          onAddressSelect(address);
+          setError(null);
+        } catch (err) {
+          setError("Не удалось получить адрес. Пожалуйста, введите его вручную.");
+          console.error("Error:", err);
+          onAddressSelect(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+        } finally {
+          setIsLoadingAddress(false);
+        }
+      }, DEBOUNCE_DELAY);
+    },
+    [onAddressSelect, getAddress]
+  );
 
   useEffect(() => {
     const fetchInitialLocation = async () => {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-          async (location) => {
-            const userPos: [number, number] = [
-              location.coords.latitude,
-              location.coords.longitude,
-            ];
+          (location) => {
+            const userPos = {
+              lat: location.coords.latitude,
+              lng: location.coords.longitude,
+            };
             setUserLocation(userPos);
-            setPosition(userPos);
-
-            const address = await getAddress(userPos[0], userPos[1]);
-            onAddressSelect(address);
+            if (!initialSetupDone) {
+              setPosition(userPos);
+              setInitialSetupDone(true);
+              if (mapRef.current) {
+                mapRef.current.panTo(userPos);
+                mapRef.current.setZoom(17);
+              }
+              debouncedGetAddress(userPos.lat, userPos.lng);
+            }
           },
-          async (error) => {
+          (error) => {
             console.error("Error getting location:", error);
-            const address = await getAddress(position[0], position[1]);
-            onAddressSelect(address);
+            debouncedGetAddress(position.lat, position.lng);
           },
           {
             enableHighAccuracy: true,
             timeout: 5000,
-            maximumAge: 0,
+            maximumAge: 60000,
           }
         );
       }
     };
 
     fetchInitialLocation();
-  }, [onAddressSelect, position]);
 
-  const LocationMarker = () => {
-    useMapEvents({
-      click: async (e) => {
-        setPosition([e.latlng.lat, e.latlng.lng]);
-        const handleGetAddress = async () => {
-          try {
-            setError(null);
-            const address = await getAddress(e.latlng.lat, e.latlng.lng);
-            onAddressSelect(address);
-          } catch (err) {
-            setError(
-              "Не удалось получить адрес. Пожалуйста, введите его вручную."
-            );
-            console.error("Error:", err);
-          }
-        };
-        handleGetAddress();
-      },
-    });
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
+  }, [debouncedGetAddress, position, initialSetupDone]);
 
-    return position ? (
-      <Marker position={position} icon={markers.default} />
-    ) : null;
-  };
+  const onMapClick = useCallback((e: google.maps.MapMouseEvent) => {
+    if (e.latLng) {
+      const newPos = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+      setPosition(newPos);
+      const geocoder = new google.maps.Geocoder();
+      setIsLoadingAddress(true);
+      
+      geocoder.geocode({ location: newPos }, (results, status) => {
+        if (status === "OK" && results?.[0]) {
+          const address = results[0].formatted_address;
+          onAddressSelect(address); 
+        } else {
+          onAddressSelect(`${newPos.lat.toFixed(6)}, ${newPos.lng.toFixed(6)}`);
+        }
+        setIsLoadingAddress(false);
+      });
+    }
+  }, [onAddressSelect]);
 
   return (
     <>
-      <MapContainer
-        center={position}
-        zoom={16}
-        style={{
-          height: "400px",
-          width: "100%",
-          borderRadius: "12px",
-          marginTop: "1rem",
-        }}
-        zoomControl={false}
+      <LoadScript 
+        googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}
+        libraries={["places"]}
       >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution=""
-        />
+        <GoogleMap
+          mapContainerStyle={{
+            height: "400px",
+            width: "100%",
+            borderRadius: "12px",
+            marginTop: "1rem",
+          }}
+          center={position}
+          zoom={16}
+          onClick={onMapClick}
+          onLoad={onLoad}
+          options={{
+            zoomControl: true,
+            streetViewControl: false,
+            mapTypeControl: false,
+            fullscreenControl: false,
+          }}
+        >
+          {markers && (
+            <>
+              <Marker position={position} icon={markers.default} />
+              {userLocation && <Marker position={userLocation} icon={markers.user} />}
+            </>
+          )}
+        </GoogleMap>
+      </LoadScript>
 
-        <LocationMarker />
-        <RecenterAutomatically />
-
-        {userLocation && <Marker position={userLocation} icon={markers.user} />}
-      </MapContainer>
+      {isLoadingAddress && (
+        <div className="text-blue-500 text-sm mt-4 flex items-center">
+          <svg className="animate-spin ml-1 mr-2 h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Получение адреса...
+        </div>
+      )}
+      
       {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
     </>
   );
