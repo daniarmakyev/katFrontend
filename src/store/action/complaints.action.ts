@@ -50,6 +50,11 @@ interface ComplaintsResponse {
   data: IComplaints[];
 }
 
+interface RecommendationResponse {
+  message: string;
+  data: string;
+}
+
 export const complaintstatusChange = createAsyncThunk(
   "complaints/complaintstatusChange",
   async ({ complaintId, status }: { complaintId: string | number; status: string }) => {
@@ -152,6 +157,22 @@ export const deleteComplaints = createAsyncThunk(
       thunkAPI.dispatch(getСomplaintsListByFilter({ searchValue: "", status: "все" }));
     } catch (error) {
       console.error("Error deleting complaints:", error);
+      throw error;
+    }
+  }
+);
+
+export const getRecommendation = createAsyncThunk(
+  "complaints/getRecommendation",
+  async (complaint: string) => {
+    try {
+      const response = await axios.post<RecommendationResponse>(
+        "http://localhost:3001/recommendation",
+        { complaint }
+      );
+      return response.data.data;
+    } catch (error) {
+      console.error("Error getting recommendation:", error);
       throw error;
     }
   }

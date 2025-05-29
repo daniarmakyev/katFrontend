@@ -229,6 +229,7 @@ const AuthPage = () => {
                   <label htmlFor="" className="text-white-black">
                     Жалоба
                   </label>
+
                   <Input
                     name="complaint"
                     placeholder="Введите текст жалобы..."
@@ -240,6 +241,19 @@ const AuthPage = () => {
                     readOnly={false}
                     required
                   />
+                  <div className="flex items-center gap-2 w-full">
+                    <input
+                      type="checkbox"
+                      id="notification"
+                      className="w-4 h-4 accent-purple cursor-pointer"
+                    />
+                    <label
+                      htmlFor="notification"
+                      className="text-white-black text-sm cursor-pointer"
+                    >
+                      Уведомлять о статусе жалобы
+                    </label>
+                  </div>
                   <div className="flex justify-between w-full">
                     <div className="flex items-center gap-4">
                       <PrimaryButton

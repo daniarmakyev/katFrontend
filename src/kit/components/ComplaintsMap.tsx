@@ -59,7 +59,7 @@ interface ComplaintWithCoords extends Complaint {
   };
 }
 const center = {
-  lat: 42.8746,
+  lat: 41.7,
   lng: 74.5698,
 };
 
@@ -84,38 +84,39 @@ const ComplaintsMap = () => {
     showAllScores: false,
   });
 
-  const geocodeAddress = useCallback(async (
-    address: string
-  ): Promise<{ lat: number; lng: number } | null> => {
-    try {
-      return new Promise((resolve, reject) => {
-        if (!window.google || !window.google.maps) {
-          reject(new Error("Google Maps API не загружен"));
-          return;
-        }
-
-        const geocoder = new window.google.maps.Geocoder();
-        const searchAddress = address.includes("Кыргызстан")
-          ? address
-          : `${address}, Кыргызстан`;
-
-        geocoder.geocode({ address: searchAddress }, (results, status) => {
-          if (status === "OK" && results && results[0]) {
-            const location = results[0].geometry.location;
-            resolve({
-              lat: location.lat(),
-              lng: location.lng(),
-            });
-          } else {
-            resolve(null);
+  const geocodeAddress = useCallback(
+    async (address: string): Promise<{ lat: number; lng: number } | null> => {
+      try {
+        return new Promise((resolve, reject) => {
+          if (!window.google || !window.google.maps) {
+            reject(new Error("Google Maps API не загружен"));
+            return;
           }
+
+          const geocoder = new window.google.maps.Geocoder();
+          const searchAddress = address.includes("Кыргызстан")
+            ? address
+            : `${address}, Кыргызстан`;
+
+          geocoder.geocode({ address: searchAddress }, (results, status) => {
+            if (status === "OK" && results && results[0]) {
+              const location = results[0].geometry.location;
+              resolve({
+                lat: location.lat(),
+                lng: location.lng(),
+              });
+            } else {
+              resolve(null);
+            }
+          });
         });
-      });
-    } catch (error) {
-      console.error("Ошибка геокодирования:", error);
-      return null;
-    }
-  }, []);
+      } catch (error) {
+        console.error("Ошибка геокодирования:", error);
+        return null;
+      }
+    },
+    []
+  );
 
   const geocodeComplaints = useCallback(async () => {
     if (!window.google || !window.google.maps) {
@@ -171,10 +172,13 @@ const ComplaintsMap = () => {
     setLoading(false);
   }, [complaints, geocodeAddress]);
 
-  const onLoad = useCallback((map: google.maps.Map) => {
-    setMap(map);
-    geocodeComplaints();
-  }, [geocodeComplaints]);
+  const onLoad = useCallback(
+    (map: google.maps.Map) => {
+      setMap(map);
+      geocodeComplaints();
+    },
+    [geocodeComplaints]
+  );
 
   const onUnmount = useCallback(() => {
     setMap(null);
@@ -395,6 +399,10 @@ const ComplaintsMap = () => {
                 stylers: [{ visibility: "off" }],
               },
             ],
+            gestureHandling: "greedy",
+            scrollwheel: true,
+            zoomControl: true,
+            fullscreenControl: true,
           }}
         >
           {!loading &&

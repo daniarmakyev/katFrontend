@@ -90,7 +90,58 @@ del {
   animation: pulse 1.5s infinite;
   filter: drop-shadow(0 0 8px rgba(255, 0, 0, 0.4));
 }
-/* Полностью скрывает атрибуцию */
+
 .leaflet-control-attribution {
   display: none !important;
+}
+
+.typewriter {
+  display: inline-block;
+}
+
+.cursor {
+  display: inline-block;
+  width: 3px;
+  height: 1em;
+  background: #6C63FF;
+  margin-left: 2px;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.recommendation-enter {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.recommendation-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.recommendation-container {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(108, 99, 255, 0.5) transparent;
+}
+
+.recommendation-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.recommendation-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.recommendation-container::-webkit-scrollbar-thumb {
+  background-color: rgba(108, 99, 255, 0.5);
+  border-radius: 3px;
+}
+
+.recommendation-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(108, 99, 255, 0.7);
 }
