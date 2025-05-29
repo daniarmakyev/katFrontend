@@ -9,7 +9,7 @@ const Layout = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { user, isAuth } = useAppSelector((state) => state.user); // Add error
-  const { isAnyModalOpen } = useAppSelector(state => state.ui);
+  const { isAnyModalOpen } = useAppSelector((state) => state.ui);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginData, setLoginData] = useState({
@@ -34,7 +34,9 @@ const Layout = () => {
       setIsLoginModalOpen(false);
       setLoginData({ login: "", password: "" });
     } catch (error: unknown) {
-      setLoginError(error instanceof Error ? error.message : "Ошибка при входе");
+      setLoginError(
+        error instanceof Error ? error.message : "Ошибка при входе"
+      );
     }
   };
   useEffect(() => {
@@ -49,12 +51,17 @@ const Layout = () => {
 
   return (
     <div className="relative">
-
       {userId && userId === "admin" && (
         <button
           type="button"
           onClick={() => navigate("/admin")}
-          className="fixed bottom-32 right-2 sm:right-8 z-30 bg-purple hover:bg-dark-purple hover:shadow-[0_0_4px_0_rgb(108,99,255)] rounded-md p-2 h-10 transition-all duration-300"
+          className={`fixed bottom-32 right-2 sm:right-8 transition-all duration-300
+            ${
+              isAnyModalOpen
+                ? "z-0 opacity-0 pointer-events-none"
+                : "z-30 opacity-100"
+            }
+            bg-purple hover:bg-dark-purple hover:shadow-[0_0_4px_0_rgb(108,99,255)] rounded-md p-2 h-10`}
         >
           <svg
             fill="#000000"
@@ -86,7 +93,13 @@ const Layout = () => {
         <button
           type="button"
           onClick={() => setIsLoginModalOpen(true)}
-          className="fixed bottom-20 right-2 sm:right-8 z-30 bg-purple hover:bg-dark-purple hover:shadow-[0_0_4px_0_rgb(108,99,255)] rounded-md p-2 h-10 transition-all duration-300"
+          className={`fixed bottom-20 right-2 sm:right-8 transition-all duration-300
+            ${
+              isAnyModalOpen
+                ? "z-0 opacity-0 pointer-events-none"
+                : "z-30 opacity-100"
+            }
+            bg-purple hover:bg-dark-purple hover:shadow-[0_0_4px_0_rgb(108,99,255)] rounded-md p-2 h-10`}
         >
           <svg
             viewBox="0 0 24 24"
@@ -132,7 +145,7 @@ const Layout = () => {
               <button
                 onClick={() => {
                   setIsLoginModalOpen(false);
-                  setLoginError(null); 
+                  setLoginError(null);
                 }}
                 className="text-white-black hover:text-purple transition-colors"
               >
@@ -183,8 +196,16 @@ const Layout = () => {
       )}
 
       {userId && (
-        <div className="fixed bottom-20 right-2 sm:right-8 z-30 bg-purple hover:bg-dark-purple hover:shadow-[0_0_4px_0_rgb(108,99,255)] rounded-md p-2 h-10 transition-all duration-300">
-          <button onClick={handleLogout}>
+        <div
+          className={`fixed bottom-20 right-2 sm:right-8 cursor-pointer transition-all duration-300
+          ${
+            isAnyModalOpen
+              ? "z-0 opacity-0 pointer-events-none"
+              : "z-30 opacity-100"
+          }
+          flex items-center justify-center gap-2 bg-purple hover:bg-dark-purple hover:shadow-[0_0_4px_0_rgb(108,99,255)] rounded-md p-2 h-10`}
+        >
+          <button onClick={handleLogout} className="">
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -214,10 +235,15 @@ const Layout = () => {
         </div>
       )}
 
-      <ChangeThemeButton 
+      <ChangeThemeButton
         className={`fixed bottom-8 right-2 sm:right-8 transition-all duration-300
-          ${isAnyModalOpen ? 'z-0 opacity-0 pointer-events-none' : 'z-30 opacity-100'}`} 
+          ${
+            isAnyModalOpen
+              ? "z-0 opacity-0 pointer-events-none"
+              : "z-30 opacity-100"
+          }`}
       />
+
       <Outlet />
     </div>
   );

@@ -8,6 +8,7 @@ import {
   getRecommendation,
 } from "../../store/action/complaints.action";
 import type { IComplaints } from "../../store/slice/complaints.slice";
+import { setModalOpen } from "../../store/slice/ui.slice";
 
 const ComplaintModal = ({
   onClose,
@@ -43,6 +44,14 @@ const ComplaintModal = ({
       });
     }
   }, [complaints]);
+
+  useEffect(() => {
+    dispatch(setModalOpen(true));
+    
+    return () => {
+      dispatch(setModalOpen(false));
+    };
+  }, [dispatch]);
 
   const handleStatusChange = async (newStatus: string) => {
     if (!complaints?.id || isStatusChanging) return;
@@ -105,7 +114,6 @@ const ComplaintModal = ({
     }
   };
 
-  // Add typewriter effect when recommendation changes
   useEffect(() => {
     if (!recommendation) {
       setDisplayText('');
@@ -125,14 +133,14 @@ const ComplaintModal = ({
         setIsTyping(false);
         clearInterval(typeInterval);
       }
-    }, 30); // Adjust speed here
+    }, 30);
 
     return () => clearInterval(typeInterval);
   }, [recommendation]);
 
   return (
     <div
-      className="fixed inset-0 bg-black/70 flex items-center justify-center z-[3] p-2.5 overflow-y-auto"
+      className="fixed inset-0 bg-black/70 flex items-center justify-center z-[51] p-2.5 overflow-y-auto"
       onClick={handleOverlayClick}
     >
       <div className="w-full max-w-[500px] bg-primary-bg rounded-xl p-6 shadow-lg my-4">
