@@ -2,7 +2,6 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import type { IComplaints } from "../slice/complaints.slice";
 
-// Мапинг для кодирования статусов
 const encodeStatus = (status: string): string => {
   switch (status) {
     case "новая":
@@ -59,8 +58,8 @@ export const complaintstatusChange = createAsyncThunk(
   "complaints/complaintstatusChange",
   async ({ complaintId, status }: { complaintId: string | number; status: string }) => {
     try {
-      const response = await axios.patch(`http://localhost:3001/complaints/${complaintId}`, {
-        status: encodeStatus(status), // Кодируем статус
+      const response = await axios.patch(`https://katbackend.onrender.com/complaints/${complaintId}`, {
+        status: encodeStatus(status), 
       });
 
       return response.data.data;
@@ -99,7 +98,7 @@ export const getСomplaintsListByFilter = createAsyncThunk(
 
       console.log("Отправляемые параметры:", params);
 
-      const response = await axios.get<ComplaintsResponse>(`http://localhost:3001/complaints`, {
+      const response = await axios.get<ComplaintsResponse>(`https://katbackend.onrender.com/complaints`, {
         params
       });
       
@@ -114,8 +113,8 @@ export const getСomplaintsList = createAsyncThunk(
   "complaints/getСomplaintsList",
   async () => {
     try {
-      const response = await axios.get("http://localhost:3001/complaints");
-      return response.data.data; // Получаем данные из response.data.data
+      const response = await axios.get("https://katbackend.onrender.com/complaints");
+      return response.data.data; 
     } catch (error) {
       console.error("Error fetching complaints:", error);
       throw error;
@@ -127,7 +126,7 @@ export const createComplaints = createAsyncThunk(
   "complaints/createComplaints",
   async (data: IComplaints, thunkAPI) => {
     try {
-      await axios.post("http://localhost:3001/complaints", data);
+      await axios.post("https://katbackend.onrender.com/complaints", data);
       thunkAPI.dispatch(getСomplaintsListByFilter({ searchValue: "", status: "все" }));
     } catch (error) {
       console.error("Error creating complaints:", error);
@@ -140,7 +139,7 @@ export const editComplaints = createAsyncThunk(
   "complaints/editComplaints",
   async ({ id, updatedComplaints }: { id: string; updatedComplaints: Partial<IComplaints> }, thunkAPI) => {
     try {
-      await axios.patch(`http://localhost:3001/complaints/${id}`, updatedComplaints);
+      await axios.patch(`https://katbackend.onrender.com/complaints/${id}`, updatedComplaints);
       thunkAPI.dispatch(getСomplaintsListByFilter({ searchValue: "", status: "все" }));
     } catch (error) {
       console.error("Error editing complaints:", error);
@@ -153,7 +152,7 @@ export const deleteComplaints = createAsyncThunk(
   "complaints/deleteComplaints",
   async (complaintId: string, thunkAPI) => {
     try {
-      await axios.delete(`http://localhost:3001/complaints/${complaintId}`);
+      await axios.delete(`https://katbackend.onrender.com/complaints/${complaintId}`);
       thunkAPI.dispatch(getСomplaintsListByFilter({ searchValue: "", status: "все" }));
     } catch (error) {
       console.error("Error deleting complaints:", error);
@@ -167,7 +166,7 @@ export const getRecommendation = createAsyncThunk(
   async (complaint: string) => {
     try {
       const response = await axios.post<RecommendationResponse>(
-        "http://localhost:3001/recommendation",
+        "https://katbackend.onrender.com/recommendation",
         { complaint }
       );
       return response.data.data;

@@ -71,7 +71,7 @@ const AuthPage = () => {
         ...(formData.address && { address: formData.address }),
       };
 
-      const response = await fetch("http://localhost:3001/submit-complaint", {
+      const response = await fetch("https://katbackend.onrender.com/submit-complaint", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

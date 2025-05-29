@@ -3,13 +3,13 @@ import { getСomplaintsList, getСomplaintsListByFilter, complaintstatusChange }
 
 export interface IComplaints {
   id?: string | number;
-  complaint: string;    // Changed from body
-  address: string;      // Added this field
+  complaint: string;
+  address: string;
   category: string;
   status: "new" | "in_progress" | "waiting" | "rejected" | "completed" | string;
   seriousnessScore: number;
-  createdAt?: string;   // Added this field
-  updatedAt?: string;   // Added this field
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface ComplaintsState {
@@ -33,7 +33,7 @@ const initialState: ComplaintsState = {
     createdAt: "",
     updatedAt: "",
     seriousnessScore: 0,
-    complaint: "", // Changed from body to complaint
+    complaint: "",
   },
   complaints: [],
   loading: false,
@@ -45,7 +45,6 @@ const initialState: ComplaintsState = {
   }
 };
 
-// Add these helper functions at the top of the file
 export const decodeStatus = (status: string): string => {
   switch (status) {
     case "new":
@@ -98,31 +97,24 @@ const complaintsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Обработка изменения статуса жалобы
       .addCase(complaintstatusChange.pending, (state) => {
-        // Не показываем уведомления для изменения статуса
         state.error = null;
       })
-
-      // filepath: /Users/daniarmakyev/Desktop/toDoList/src/store/slice/complaints.slice.ts
       .addCase(complaintstatusChange.fulfilled, (state, { payload }) => {
-        // Находим жалобу в массиве и обновляем её
         const complaintIndex = state.complaints.findIndex(
           complaint => complaint.id === payload.id
         );
 
         if (complaintIndex !== -1) {
-          // Обновляем жалобу с новыми данными из ответа сервера
           state.complaints[complaintIndex] = {
             ...state.complaints[complaintIndex],
             ...payload,
-            status: decodeStatus(payload.status) // Decode the status here
+            status: decodeStatus(payload.status)
           };
         }
 
-        // Если это текущая выбранная жалоба, обновляем и её
         if (state.complaint.id === payload.id) {
-          state.complaint = { ...state.complaint, ...payload, status: decodeStatus(payload.status) }; // Decode the status here
+          state.complaint = { ...state.complaint, ...payload, status: decodeStatus(payload.status) };
         }
       })
       .addCase(complaintstatusChange.rejected, (state, action) => {
@@ -176,7 +168,7 @@ const complaintsSlice = createSlice({
         state.complaints = payload.map((complaint: IComplaints) => ({
           ...complaint,
           status: decodeStatus(complaint.status),
-          category: decodeSpecialization(complaint.category) 
+          category: decodeSpecialization(complaint.category)
         }));
         state.loading = false;
         state.notification = {

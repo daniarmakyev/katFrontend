@@ -17,7 +17,7 @@ export const loginUser = createAsyncThunk(
   async (credentials: LoginCredentials) => {
     try {
       const response = await axios.get<LoginResponse>(
-        `http://localhost:3001/users/login/${credentials.login}`
+        `https://katbackend.onrender.com/users/login/${credentials.login}`
       );
 
       localStorage.setItem('userId', response.data.data.id.toString());
@@ -40,7 +40,6 @@ export const logout = createAsyncThunk(
   }
 );
 
-// Add function to check if user is already logged in
 export const checkAuth = createAsyncThunk(
   "user/checkAuth",
   async () => {
@@ -49,7 +48,7 @@ export const checkAuth = createAsyncThunk(
     if (userId) {
       try {
         const response = await axios.get<IUser>(
-          `http://localhost:3001/users/${userId}`
+          `https://katbackend.onrender.com/users/${userId}`
         );
         return response.data;
       } catch (error) {
