@@ -1,6 +1,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import type { IUser } from "../slice/user.slice";
+import { api } from "../../helpers/const";
 
 interface LoginResponse {
   message: string;
@@ -17,7 +18,7 @@ export const loginUser = createAsyncThunk(
   async (credentials: LoginCredentials) => {
     try {
       const response = await axios.get<LoginResponse>(
-        `https://katbackend.onrender.com/users/login/${credentials.login}`
+        `${api}users/login/${credentials.login}`
       );
 
       localStorage.setItem('userId', response.data.data.id.toString());
@@ -48,7 +49,7 @@ export const checkAuth = createAsyncThunk(
     if (userId) {
       try {
         const response = await axios.get<IUser>(
-          `https://katbackend.onrender.com/users/${userId}`
+          `${api}users/${userId}`
         );
         return response.data;
       } catch (error) {
